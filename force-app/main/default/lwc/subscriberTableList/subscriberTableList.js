@@ -1,20 +1,14 @@
 import { LightningElement ,wire , track, api } from 'lwc';
 import getSubscribers from '@salesforce/apex/SubscriberController.getSubscribers';
-import { NavigationMixin } from 'lightning/navigation';
 
 const columns = [
-    { label: 'Name', fieldName: 'Name', type: 'button',
-    typeAttributes: {
-        label: { fieldName: 'Name' },
-        name: 'viewSubscriber',
-        variant: 'base', 
-    }},
-    { label: 'Phone', fieldName: 'Phone__c', type: 'phone'},
-    { label: 'Email', fieldName: 'Email__c', type: 'email' },
-    { label: 'Status', fieldName: 'Status__c'},
-    { label: 'Data Used', fieldName: 'Data_Used__c'},
-    { label: 'Country ', fieldName: 'Country__c'},
-    { label: 'Date Joined', fieldName: 'Date_Joined__c', type : 'date' },
+    { label: 'Name', fieldName: 'Name', sortable: true },
+    { label: 'Phone', fieldName: 'Phone__c', type: 'phone', sortable: true},
+    { label: 'Email', fieldName: 'Email__c', type: 'email', sortable: true},
+    { label: 'Status', fieldName: 'Status__c', sortable: true},
+    { label: 'Data Used', fieldName: 'Data_Used__c', sortable: true},
+    { label: 'Country ', fieldName: 'Country__c', sortable: true},
+    { label: 'Date Joined', fieldName: 'Date_Joined__c', type : 'date' , sortable: true},
 ];
 
 export default class SubscriberTableList extends LightningElement {
@@ -22,6 +16,14 @@ export default class SubscriberTableList extends LightningElement {
     @api recordId;
     @track subscribersToDisplay = [];
     @track subscribers = [];
+
+    @track searchTerm = '';
+    @track pagedSubscribers = [];
+    @track currentPage = 1;
+    @track totalRecords = 0;
+    @track pageSize = 10;
+    @track sortDirection = 'asc';
+    @track sortedBy;
 
     columns = columns;
 
@@ -36,6 +38,9 @@ export default class SubscriberTableList extends LightningElement {
          this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
          console.log('subscribersToDisplay ' + JSON.stringify(this.subscribersToDisplay));
          console.log('subscribersToDisplay.length ' +this.subscribersToDisplay.length);
+         this.pageSubscribers();
+         this.totalRecords = data.length;
+
         this.error = undefined;
 
      } else if (error) {
@@ -48,40 +53,54 @@ export default class SubscriberTableList extends LightningElement {
     IncludeDisconnected(event){
         if(event.target.checked){
             this.subscribersToDisplay = this.subscribers;
+            this.currentPage = 1;
         }
         else{
             this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+            this.currentPage = 1;
         }
     }
 
-    navigateSubscriberRecord(event) {
-        // Retrieve the action and row details from the event
-        const action = event.detail.action;
-        const row = event.detail.row;
+    handleLoadMore() {
+        this.currentPage += 1;
+        this.pageSize += 10;
+        this.pageSubscribers();
+    }
 
-        console.log('Action: ', JSON.stringify(action));
-        console.log('action.name: ', action.name);
-        console.log('row.Id: ', row.Id);
-    
-        // Switch case to handle different actions
-        switch (action.name) {
-            // If the action is to view the freelancer
-            case 'viewSubscriber':
-                // Navigate to the record page of the specified freelancer
-                this[NavigationMixin.Navigate]({
-                    type: 'standard__recordPage',
-                    attributes: {
-                        recordId: row.Id,
-                        objectApiName: 'Subscriber__c',
-                        actionName: 'view'
-                    }
-                });
-                break;
-            default:
-                break;
-        }
+    handleSort(event) {
+        this.sortDirection = event.detail.sortDirection;
+        this.sortedBy = event.detail.fieldName;
+        this.subscribersToDisplay = this.sortData(event.detail.fieldName, event.detail.sortDirection);
+        this.pageSubscribers();
+    }
+
+    sortData(fieldname, direction) {
+        let parseData = JSON.parse(JSON.stringify(this.subscribersToDisplay));
+        let keyValue = (a) => {
+            return a[fieldname];
+        };
+        let isReverse = direction === 'asc' ? 1 : -1;
+        parseData.sort((x, y) => {
+            x = keyValue(x) ? keyValue(x) : ''; 
+            y = keyValue(y) ? keyValue(y) : '';
+            return isReverse * ((x > y) - (y > x));
+        });
+        return parseData;
     }
 
 
+    pageSubscribers() {
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = Math.min(startIndex + this.pageSize, this.totalRecords);
+        this.pagedSubscribers = this.subscribersToDisplay.slice(startIndex, endIndex);
+    }
+
+    handleSearch(event) {
+        this.searchTerm = event.target.value.toLowerCase();
+        this.currentPage = 1;
+        this.subscribersToDisplay = this.subscribers.filter(elem => elem.Name.toLowerCase().includes(this.searchTerm));
+        this.pageSubscribers();
+
+    }
 
 }

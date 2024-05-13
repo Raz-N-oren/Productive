@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <lightning-input
     type="checkbox"
       label="Include Disconnected"
@@ -13,4 +13,29 @@
             >
     </lightning-datatable>
 
+</template> -->
+
+<template>
+  <lightning-card title="Subscriber List">
+      <div class="slds-m-around_medium">
+          <lightning-input label="Search" value={searchTerm} onchange={handleSearch}></lightning-input>
+          <lightning-input type="checkbox" label="Include Disconnected" onchange={IncludeDisconnected}></lightning-input>
+          <template if:true={subscribersToDisplay}>
+              <lightning-datatable
+                  key-field="Id"
+                  data={subscribersToDisplay}
+                  columns={columns}
+                  sorted-by={defaultSortDirection}
+                  sorted-direction={sortDirection}
+                  onsort={handleSort}
+                  enable-infinite-loading
+                  onloadmore={handleLoadMore}
+              >
+              </lightning-datatable>
+          </template>
+          <template if:false={subscribersToDisplay}>
+              <p>No subscribers found.</p>
+          </template>
+      </div>
+  </lightning-card>
 </template>

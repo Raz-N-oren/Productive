@@ -29,10 +29,8 @@ private class SubscriberController_Test {
         List<Subscriber__c> testSubscribers = new List<Subscriber__c>();
         for(Integer i = 0; i < 5; i++) {
             testSubscribers.add(new Subscriber__c(
-                Name__c = 'Test Subscriber ' + i,
-                Phone__c = '050918808' + i,
-                Email__c = 'test' + i + '@test.com',
-                Data_Used__c = 1000 * i,
+                Name__c = 'Test Subscriber ' ,
+                Data_Used__c = '1000' + i,
                 Country__c = 'Israel',
                 Date_Joined__c = Date.today(),
                 Status__c = 'Active'
