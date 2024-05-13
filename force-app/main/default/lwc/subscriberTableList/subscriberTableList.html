@@ -5,13 +5,12 @@
       name="IncludeDisconnected"
       onchange={IncludeDisconnected}>
     </lightning-input>
-    <div style="height: 300px;">
-        <lightning-datatable
-                key-field="id"
-                data={subscribersToDisplay}
-                columns={columns}
-        >
-        </lightning-datatable>
-    </div>
+    <lightning-datatable
+            key-field="Id"
+            data={subscribersToDisplay}
+            columns={columns}
+            onrowaction={navigateSubscriberRecord}>
+            >
+    </lightning-datatable>
 
 </template>
