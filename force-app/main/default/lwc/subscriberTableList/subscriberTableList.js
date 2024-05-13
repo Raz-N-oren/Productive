@@ -27,7 +27,10 @@ export default class SubscriberTableList extends LightningElement {
 
     columns = columns;
 
-
+    /* Created By: Raz
+    * Params: -
+    * Description: Receives data or error from the wired Apex method getSubscribers.
+    */
     @wire(getSubscribers)
     wiredSubscribers({ error, data }) {
         console.log('data ' + JSON.stringify(data));
@@ -50,50 +53,97 @@ export default class SubscriberTableList extends LightningElement {
      }
     }
 
-    IncludeDisconnected(event){
-        if(event.target.checked){
+    /* Created By: Raz
+    * Params: event
+    * Description: This function is associated with a checkbox event. When the checkbox is checked, it includes all subscribers in the display list. When the checkbox is unchecked, it filters out subscribers with a status of 'Disconnected' and updates the display list accordingly.
+    */
+    IncludeDisconnected(event) {
+        // Check if the checkbox is checked.
+        if (event.target.checked) {
+            // If the checkbox is checked, assign all subscribers to the display list.
             this.subscribersToDisplay = this.subscribers;
+            // Reset the current page to 1.
             this.currentPage = 1;
-        }
-        else{
-            this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+        } else {
+            // If the checkbox is not checked,
+            // Filter out subscribers with 'Disconnected' status and assign the filtered list to the display list.
+            this.subscribersToDisplay = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+            // Reset the current page to 1.
             this.currentPage = 1;
         }
     }
-
+    
+    /* 
+    * Created By: Raz.
+    * Params: -
+    * Description: This function manages the action triggered when loading more data.
+    */
     handleLoadMore() {
+        // Increment the current page numbe r by 1
         this.currentPage += 1;
+        // Increase the page size by 10
         this.pageSize += 10;
+        // Call the function responsible for updating the displayed subscribers based on the current page and page size
         this.pageSubscribers();
     }
 
+    /* 
+    * Created By: Raz.
+    * Params: event.
+    * Description: This function handles the action triggered when sorting data.
+    */
     handleSort(event) {
+        // Update the sort direction and sorted by field based on the event details.
         this.sortDirection = event.detail.sortDirection;
         this.sortedBy = event.detail.fieldName;
+        // Sort the displayed subscribers based on the new sorting criteria.
         this.subscribersToDisplay = this.sortData(event.detail.fieldName, event.detail.sortDirection);
+        // Call the function responsible for updating the displayed subscribers based on the current page and page size.
         this.pageSubscribers();
     }
 
-    sortData(fieldname, direction) {
-        let parseData = JSON.parse(JSON.stringify(this.subscribersToDisplay));
+    /* 
+    * Created By: Raz.
+    * Params: fieldName - The name of the field by which the data should be sorted.
+    * direction - The direction of sorting ('asc' for ascending, 'desc' for descending).
+    * Description: This function sorts the data based on the specified field name and direction.
+    */
+    sortData(fieldName, direction) {
+        // Deep clone the subscribers data to avoid mutating the original data.
+        let parsedData = JSON.parse(JSON.stringify(this.subscribersToDisplay));
+        // Define a function to extract the value of the specified field from each record
         let keyValue = (a) => {
-            return a[fieldname];
+            return a[fieldName];
         };
+        // Determine whether to sort in ascending or descending order
         let isReverse = direction === 'asc' ? 1 : -1;
-        parseData.sort((x, y) => {
+        // Perform the sorting based on the specified field and direction
+        parsedData.sort((x, y) => {
+            // Get the values of the specified field from the current and next records
             x = keyValue(x) ? keyValue(x) : ''; 
             y = keyValue(y) ? keyValue(y) : '';
+            // Compare the values and return the result based on the sorting direction
             return isReverse * ((x > y) - (y > x));
         });
-        return parseData;
+        // Return the sorted data
+        return parsedData;
     }
 
 
+    /* 
+    * Created By: Raz.
+    * Params: None.
+    * Description: This function manages the pagination of displayed subscribers.
+    */
     pageSubscribers() {
+        // Calculate the start index of the current page.
         const startIndex = (this.currentPage - 1) * this.pageSize;
+        // Calculate the end index of the current page, ensuring it does not exceed the total number of records.
         const endIndex = Math.min(startIndex + this.pageSize, this.totalRecords);
+        // Extract the subscribers to display for the current page based on the calculated indices.
         this.pagedSubscribers = this.subscribersToDisplay.slice(startIndex, endIndex);
     }
+
 
     handleSearch(event) {
         this.searchTerm = event.target.value.toLowerCase();
