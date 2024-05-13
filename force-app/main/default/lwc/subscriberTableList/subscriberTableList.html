@@ -1,0 +1,18 @@
+<template>
+    <lightning-input
+    type="checkbox"
+      label="Include Disconnected"
+      name="IncludeDisconnected"
+      onchange={IncludeDisconnected}>
+    >
+    </lightning-input>
+    <div style="height: 300px;">
+        <lightning-datatable
+                key-field="id"
+                data={subscribersToDisplay}
+                columns={columns}
+        >
+        </lightning-datatable>
+    </div>
+
+</template>
