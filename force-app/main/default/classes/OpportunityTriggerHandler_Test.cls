@@ -42,7 +42,7 @@ private class OpportunityTriggerHandler_Test {
             Account updatedAccount = [SELECT Amount_of_opportunities__c FROM Account WHERE Id = :acc.Id];
     
             // Verify the expected behavior
-            System.assertEquals(3000, updatedAccount.Amount_of_opportunities__c, 'Total amount not updated correctly');
+            System.assertEquals(3000, updatedAccount.Amount_of_opportunities__c, 'Total amount updated correctly');
         }
     
         @isTest

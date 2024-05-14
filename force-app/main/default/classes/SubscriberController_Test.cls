@@ -45,7 +45,5 @@ private class SubscriberController_Test {
 
         // Assert the results
         System.assertEquals(5, resultSubscribers.size(), 'Number of subscribers retrieved should be 5');
-
-        // You can add more assertions based on your specific requirements
     }
 }

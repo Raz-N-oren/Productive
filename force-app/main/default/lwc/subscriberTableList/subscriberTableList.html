@@ -1,41 +1,33 @@
-<!-- <template>
-    <lightning-input
-    type="checkbox"
-      label="Include Disconnected"
-      name="IncludeDisconnected"
-      onchange={IncludeDisconnected}>
-    </lightning-input>
-    <lightning-datatable
-            key-field="Id"
-            data={subscribersToDisplay}
-            columns={columns}
-            onrowaction={navigateSubscriberRecord}>
-            >
-    </lightning-datatable>
-
-</template> -->
 
 <template>
-  <lightning-card title="Subscriber List">
-      <div class="slds-m-around_medium">
-          <lightning-input label="Search" value={searchTerm} onchange={handleSearch}></lightning-input>
-          <lightning-input type="checkbox" label="Include Disconnected" onchange={IncludeDisconnected}></lightning-input>
-          <template if:true={subscribersToDisplay}>
-              <lightning-datatable
-                  key-field="Id"
-                  data={subscribersToDisplay}
-                  columns={columns}
-                  sorted-by={defaultSortDirection}
-                  sorted-direction={sortDirection}
-                  onsort={handleSort}
-                  enable-infinite-loading
-                  onloadmore={handleLoadMore}
-              >
-              </lightning-datatable>
-          </template>
-          <template if:false={subscribersToDisplay}>
-              <p>No subscribers found.</p>
-          </template>
+    <lightning-card title="Subscriber List">
+        <div class="slds-m-around_medium">
+            <lightning-input label="Search" value={searchTerm} onchange={handleSearch}></lightning-input>
+            <lightning-input type="checkbox" label="Include Disconnected" onchange={IncludeDisconnected}></lightning-input>
+            <template if:true={subscribersToDisplay}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={recordsToDisplay}
+                    columns={columns}
+                    sorted-by={defaultSortDirection}
+                    sorted-direction={sortDirection}
+                    onsort={handleSort}
+                    enable-infinite-loading
+                    row-number-offset={rowNumberOffset}
+                >
+                </lightning-datatable>
+            </template>
+            <template if:false={subscribersToDisplay}>
+                <p>No subscribers found.</p>
+            </template>
+        </div>
+  
+        <div class="slds-align_absolute-center" style="height:5rem">
+          <lightning-button disabled={disablePreviousPageButtonGetter} icon-name="utility:chevronleft" label="Previous" alternative-text="Previous" onclick={onPreviousPageClicked}></lightning-button>
+          
+          <span class="slds-badge" style="margin-right: 4px; margin-left: 4px;"> Page {pageNumber} &nbsp;of&nbsp; {totalPages}</span>
+         
+          <lightning-button disabled={disableNextPageButtonGetter} icon-name="utility:chevronright" label="Next" alternative-text="Next" onclick={onNextPageClicked} class="slds-p-horizontal_x-small" icon-position="right"></lightning-button>
       </div>
-  </lightning-card>
-</template>
+    </lightning-card>
+  </template>

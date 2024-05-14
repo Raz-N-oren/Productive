@@ -11,26 +11,32 @@ const columns = [
     { label: 'Date Joined', fieldName: 'Date_Joined__c', type : 'date' , sortable: true},
 ];
 
+const pageSize = 10;
+
 export default class SubscriberTableList extends LightningElement {
 
     @api recordId;
     @track subscribersToDisplay = [];
     @track subscribers = [];
+    @track DisconnectedSubscribers = [];
+    @track recordsTosearch = [];
+    @track recordsToDisplay = [];
 
     @track searchTerm = '';
     @track pagedSubscribers = [];
-    @track currentPage = 1;
-    @track totalRecords = 0;
-    @track pageSize = 10;
+    @track includeDisconnected = false;
+    //@track currentPage = 1;
+    pageNumber = 1;
+    //@track totalrecords = 0;
+    //@track pageSize = 10;
     @track sortDirection = 'asc';
     @track sortedBy;
 
+    totalRecords;
+    @track totalPages;
     columns = columns;
 
-    /* Created By: Raz
-    * Params: -
-    * Description: Receives data or error from the wired Apex method getSubscribers.
-    */
+
     @wire(getSubscribers)
     wiredSubscribers({ error, data }) {
         console.log('data ' + JSON.stringify(data));
@@ -39,11 +45,14 @@ export default class SubscriberTableList extends LightningElement {
          this.subscribers= data;
          console.log('this.subscribers ' +this.subscribers);
          this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+         this.DisconnectedSubscribers =  this.subscribers.filter(elem => elem.Status__c == 'Disconnected');
          console.log('subscribersToDisplay ' + JSON.stringify(this.subscribersToDisplay));
          console.log('subscribersToDisplay.length ' +this.subscribersToDisplay.length);
-         this.pageSubscribers();
-         this.totalRecords = data.length;
-
+         //this.pageSubscribers();
+         this.totalRecords = this.subscribersToDisplay.length;
+         console.log(' this.totalRecords ' + this.totalRecords);
+         this.totalPages = Math.ceil(this.subscribersToDisplay.length/pageSize);  
+         this.paginationHelper();
         this.error = undefined;
 
      } else if (error) {
@@ -53,104 +62,141 @@ export default class SubscriberTableList extends LightningElement {
      }
     }
 
-    /* Created By: Raz
-    * Params: event
-    * Description: This function is associated with a checkbox event. When the checkbox is checked, it includes all subscribers in the display list. When the checkbox is unchecked, it filters out subscribers with a status of 'Disconnected' and updates the display list accordingly.
-    */
-    IncludeDisconnected(event) {
-        // Check if the checkbox is checked.
-        if (event.target.checked) {
-            // If the checkbox is checked, assign all subscribers to the display list.
-            this.subscribersToDisplay = this.subscribers;
-            // Reset the current page to 1.
-            this.currentPage = 1;
-        } else {
-            // If the checkbox is not checked,
-            // Filter out subscribers with 'Disconnected' status and assign the filtered list to the display list.
-            this.subscribersToDisplay = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
-            // Reset the current page to 1.
-            this.currentPage = 1;
+    IncludeDisconnected(event){
+        this.searchTerm = '';
+        if(event.target.checked){
+            //this.subscribersToDisplay = this.subscribers;
+            this.includeDisconnected = true;
+            this.totalRecords = this.subscribers.length;
+            this.totalPages = Math.ceil(this.subscribers.length/pageSize);  
+            this.paginationHelper();
+            //this.currentPage = 1;
+        }
+        else{
+            //this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+            this.includeDisconnected = false;
+            this.totalPages = Math.ceil(this.subscribersToDisplay.length/pageSize);  
+            this.totalRecords = this.subscribersToDisplay.length;
+            this.paginationHelper();
+            //this.currentPage = 1;
         }
     }
-    
-    /* 
-    * Created By: Raz.
-    * Params: -
-    * Description: This function manages the action triggered when loading more data.
-    */
-    handleLoadMore() {
-        // Increment the current page numbe r by 1
-        this.currentPage += 1;
-        // Increase the page size by 10
-        this.pageSize += 10;
-        // Call the function responsible for updating the displayed subscribers based on the current page and page size
-        this.pageSubscribers();
-    }
 
-    /* 
-    * Created By: Raz.
-    * Params: event.
-    * Description: This function handles the action triggered when sorting data.
-    */
+    /*handleLoadMore() {
+        this.currentPage += 1;
+        this.pageSize += 10;
+        this.pageSubscribers();
+    }*/
+
     handleSort(event) {
-        // Update the sort direction and sorted by field based on the event details.
         this.sortDirection = event.detail.sortDirection;
         this.sortedBy = event.detail.fieldName;
-        // Sort the displayed subscribers based on the new sorting criteria.
         this.subscribersToDisplay = this.sortData(event.detail.fieldName, event.detail.sortDirection);
-        // Call the function responsible for updating the displayed subscribers based on the current page and page size.
         this.pageSubscribers();
     }
 
-    /* 
-    * Created By: Raz.
-    * Params: fieldName - The name of the field by which the data should be sorted.
-    * direction - The direction of sorting ('asc' for ascending, 'desc' for descending).
-    * Description: This function sorts the data based on the specified field name and direction.
-    */
     sortData(fieldName, direction) {
-        // Deep clone the subscribers data to avoid mutating the original data.
-        let parsedData = JSON.parse(JSON.stringify(this.subscribersToDisplay));
-        // Define a function to extract the value of the specified field from each record
+        let parseData = JSON.parse(JSON.stringify(this.subscribersToDisplay));
         let keyValue = (a) => {
             return a[fieldName];
         };
-        // Determine whether to sort in ascending or descending order
         let isReverse = direction === 'asc' ? 1 : -1;
-        // Perform the sorting based on the specified field and direction
-        parsedData.sort((x, y) => {
-            // Get the values of the specified field from the current and next records
+        parseData.sort((x, y) => {
             x = keyValue(x) ? keyValue(x) : ''; 
             y = keyValue(y) ? keyValue(y) : '';
-            // Compare the values and return the result based on the sorting direction
             return isReverse * ((x > y) - (y > x));
         });
-        // Return the sorted data
-        return parsedData;
+        return parseData;
     }
 
 
-    /* 
-    * Created By: Raz.
-    * Params: None.
-    * Description: This function manages the pagination of displayed subscribers.
-    */
-    pageSubscribers() {
-        // Calculate the start index of the current page.
+    /*pageSubscribers() {
         const startIndex = (this.currentPage - 1) * this.pageSize;
-        // Calculate the end index of the current page, ensuring it does not exceed the total number of records.
         const endIndex = Math.min(startIndex + this.pageSize, this.totalRecords);
-        // Extract the subscribers to display for the current page based on the calculated indices.
         this.pagedSubscribers = this.subscribersToDisplay.slice(startIndex, endIndex);
-    }
-
+    }*/
 
     handleSearch(event) {
-        this.searchTerm = event.target.value.toLowerCase();
-        this.currentPage = 1;
-        this.subscribersToDisplay = this.subscribers.filter(elem => elem.Name.toLowerCase().includes(this.searchTerm));
-        this.pageSubscribers();
+        if(event.target.value.length > 0){
+            this.searchTerm = event.target.value.toLowerCase();
+            this.currentPage = 1;
+            this.recordsToDisplay = this.subscribers.filter(elem => elem.Name.toLowerCase().includes(this.searchTerm));
+            /*if(this.includeDisconnected == false){
+                this.subscribersToDisplay  = this.recordsTosearch.filter(elem => elem.Status__c != 'Disconnected');
+            }*/
+        }
+        else{
+            //this.recordsTosearch = [];
+            if(this.includeDisconnected == false){
+                this.subscribersToDisplay  = this.subscribers.filter(elem => elem.Status__c != 'Disconnected');
+            }
+            else{
+                this.subscribersToDisplay  = this.subscribers;
+            }
+            this.paginationHelper();
+        }
+        //this.pageSubscribers();
 
+    }
+
+    onNextPageClicked() {
+        this.searchTerm = '';
+        this.pageNumber = this.pageNumber + 1;
+        this.paginationHelper();
+    }
+
+    onPreviousPageClicked() {
+        this.searchTerm = '';
+        this.pageNumber = this.pageNumber - 1;
+        this.paginationHelper();
+    }
+
+    paginationHelper() {
+        console.log('enter');
+        this.recordsToDisplay = [];
+        // calculate total pages
+        // set page number 
+        if (this.pageNumber <= 1) {
+            this.pageNumber = 1;
+        } else if (this.pageNumber >= this.totalPages) {
+            this.pageNumber = this.totalPages;
+        }
+
+        // set records to display on current page 
+        for (let i = (this.pageNumber - 1) * pageSize; i < this.pageNumber * pageSize; i++) {
+            console.log('loop');
+            if (i === this.totalRecords) {
+                break;
+            }
+            if(this.includeDisconnected == true){
+                /*if(this.searchTerm != ''){
+                    //this.recordsToDisplay.push(this.recordsTosearch[i]);
+                    this.recordsToDisplay.push(this.DisconnectedSubscribers[i]);
+                }
+                else{
+                   */
+                    this.recordsToDisplay.push(this.subscribers[i]);
+                //}
+            }
+
+            else{
+                /*if(this.searchTerm != ''){
+                    console.log('this.searchTerm 1');
+                    this.recordsToDisplay.push(this.recordsTosearch[i]);
+                    console.log('this.recordsTosearch[i] 1');
+                }*/
+                this.recordsToDisplay.push(this.subscribersToDisplay[i]);
+            }
+        }
+    }
+
+    
+    get disablePreviousPageButtonGetter() {
+        return this.pageNumber == 1;
+    }
+
+    get disableNextPageButtonGetter() {
+            return this.pageNumber == this.totalPages;
     }
 
 }
