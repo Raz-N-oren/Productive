@@ -3,8 +3,8 @@
     <lightning-card title="Subscriber List">
         <div class="slds-m-around_medium">
             <lightning-input label="Search" value={searchTerm} onchange={handleSearch}></lightning-input>
-            <lightning-input type="checkbox" label="Include Disconnected" onchange={IncludeDisconnected}></lightning-input>
-            <template if:true={subscribersToDisplay}>
+            <lightning-input type="checkbox" label="Include Disconnected" onchange={handleIncludeDisconnected}></lightning-input>
+            <template if:true={recordsToDisplay}>
                 <lightning-datatable
                     key-field="Id"
                     data={recordsToDisplay}
@@ -17,7 +17,7 @@
                 >
                 </lightning-datatable>
             </template>
-            <template if:false={subscribersToDisplay}>
+            <template if:false={recordsToDisplay}>
                 <p>No subscribers found.</p>
             </template>
         </div>

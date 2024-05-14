@@ -62,7 +62,7 @@ export default class SubscriberTableList extends LightningElement {
      }
     }
 
-    IncludeDisconnected(event){
+    handleIncludeDisconnected(event){
         this.searchTerm = '';
         if(event.target.checked){
             //this.subscribersToDisplay = this.subscribers;
