@@ -25,6 +25,7 @@ export default class SubscriberTableList extends LightningElement {
     @track pagedSubscribers = [];
     @track includeDisconnected = false;
     @track sortDirection = 'asc';
+    @track defaultSortDirection = 'asc';
     @track sortedBy;
     @track totalPages;
 
@@ -102,13 +103,15 @@ export default class SubscriberTableList extends LightningElement {
     * Description: This function handles the action triggered when sorting subscriber data.
     */
     handleSort(event) {
+        this.searchTerm = '';
         // Update sort direction and sorted by field based on event details
         this.sortDirection = event.detail.sortDirection;
         this.sortedBy = event.detail.fieldName;
         // Sort the displayed subscribers based on the new sorting criteria.
         this.subscribersToDisplay = this.sortData(event.detail.fieldName, event.detail.sortDirection);
-        // Update the displayed subscribers after sorting
-        this.pageSubscribers();
+
+        // Perform pagination setup
+        this.paginationHelper();
     }
 
     /* 
