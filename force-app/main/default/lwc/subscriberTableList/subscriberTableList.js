@@ -18,7 +18,6 @@ export default class SubscriberTableList extends LightningElement {
     @api recordId;
     @track subscribersToDisplay = [];
     @track subscribers = [];
-    @track DisconnectedSubscribers = [];
     @track recordsToSearch = [];
     @track recordsToDisplay = [];
     @track searchTerm = '';
@@ -31,6 +30,8 @@ export default class SubscriberTableList extends LightningElement {
 
     pageNumber = 1;
     totalRecords;
+    subscribersWithoutDisconnected = [];
+    subscribersFilteredBySearchTerms =[];
     columns = columns;
 
     /* 
@@ -46,8 +47,6 @@ export default class SubscriberTableList extends LightningElement {
             this.subscribers = data;
             // Filter out disconnected subscribers and assign the filtered list to subscribersToDisplay.
             this.subscribersToDisplay = this.subscribers.filter(sub => sub.Status__c != 'Disconnected');
-            // Filter only disconnected subscribers and assign the filtered list to DisconnectedSubscribers.
-            this.DisconnectedSubscribers = this.subscribers.filter(sub => sub.Status__c == 'Disconnected');
             // Set the total number of records for pagination.
             this.totalRecords = this.subscribersToDisplay.length;
             // Calculate the total number of pages based on the number of records and page size.
@@ -74,26 +73,33 @@ export default class SubscriberTableList extends LightningElement {
     * Description: This function handles the action triggered when including or excluding disconnected subscribers.
     */
     handleIncludeDisconnected(event) {
-        // Reset the search term
-        this.searchTerm = '';
-        // Check if the checkbox is checked.
-        if (event.target.checked) {
-            // If checked, include disconnected subscribers.
+        // Check if the checkbox is checked and if the search term is empty.
+        if (event.target.checked && this.searchTerm == '') {
+            // If checked and no search term, include disconnected subscribers.
             this.includeDisconnected = true;
-            // Update total records and total pages for pagination.
-            this.totalRecords = this.subscribers.length;
+            // Calculate total pages and total records for pagination based on the full subscriber list.
             this.totalPages = Math.ceil(this.subscribers.length / pageSize);
-            // Perform pagination setup.
-            this.paginationHelper();
-        } else {
+            this.totalRecords = this.subscribersToDisplay.length;
+        }
+        // Check if the checkbox is checked and if there is a search term.
+        else if(event.target.checked && this.searchTerm.length > 0){
+            // If checked and a search term exists, include disconnected subscribers.
+            this.includeDisconnected = true;
+            // Filter subscribers based on search terms.
+            this.subscribersFilteredBySearchTerms = this.subscribers.filter(sub => sub.Name.toLowerCase().includes(this.searchTerm));
+            // Update total pages and total records for pagination based on filtered subscribers.
+            this.totalPages = Math.ceil(this.subscribersFilteredBySearchTerms.length / pageSize);
+            this.totalRecords = this.subscribersToDisplay.length;
+        }
+        else {
             // If unchecked, exclude disconnected subscribers.
             this.includeDisconnected = false;
             // Update total pages and total records for pagination based on displayed subscribers.
             this.totalPages = Math.ceil(this.subscribersToDisplay.length / pageSize);
             this.totalRecords = this.subscribersToDisplay.length;
-            // Perform pagination setup.
-            this.paginationHelper();
         }
+        // Perform pagination setup.
+        this.paginationHelper();
     }
 
 
@@ -154,26 +160,38 @@ export default class SubscriberTableList extends LightningElement {
     handleSearch(event) {
         // Reset page number to 1 for pagination
         this.pageNumber = 1;
-
-        // Check if search input has a value
-        if(event.target.value.length > 0){
-            // If there is a search term, set it and filter subscribers based on the search term
+        // Check if search input has a value.
+        if(event.target.value.length > 0 && this.includeDisconnected == false){
+            // If there is a search term and disconnected subscribers are excluded,
+            // filter out disconnected subscribers and update the search term.
+            this.subscribersWithoutDisconnected = this.subscribers.filter(sub => sub.Status__c != 'Disconnected');
             this.searchTerm = event.target.value.toLowerCase();
-            this.recordsToDisplay = this.subscribers.filter(sub => sub.Name.toLowerCase().includes(this.searchTerm));
+            // Filter subscribers to display based on the updated search term.
+            this.subscribersToDisplay = this.subscribersWithoutDisconnected.filter(sub => sub.Name.toLowerCase().includes(this.searchTerm));
+        }
+        else if(event.target.value.length > 0 && this.includeDisconnected == true){
+            // If there is a search term and disconnected subscribers are included,
+            // set the search term and filter subscribers to display based on it.
+            this.searchTerm = event.target.value.toLowerCase();
+            this.subscribersToDisplay = this.subscribers.filter(sub => sub.Name.toLowerCase().includes(this.searchTerm));
         }
         // If search input is empty.
         else{
             if(this.includeDisconnected == false){
                 // If includeDisconnected is false, filter out disconnected subscribers
+                // and set subscribers to display accordingly.
                 this.subscribersToDisplay  = this.subscribers.filter(sub => sub.Status__c != 'Disconnected');
             }
             else{
-                // If includeDisconnected is true, display all subscribers
+                // If includeDisconnected is true, display all subscribers.
                 this.subscribersToDisplay  = this.subscribers;
             }
-            // Perform pagination setup
-            this.paginationHelper();
         }
+        // Update total pages for pagination based on subscribers to display.
+        this.totalPages = Math.ceil(this.subscribersToDisplay.length / pageSize);
+        // Perform pagination setup.
+        this.paginationHelper();
+
     }
 
     /* 
@@ -182,8 +200,6 @@ export default class SubscriberTableList extends LightningElement {
     * Description: This function handles the action triggered when the "Next Page" button is clicked.
     */
     onNextPageClicked() {
-        // Reset search term to empty string
-        this.searchTerm = '';
         // Increment page number
         this.pageNumber = this.pageNumber + 1;
         // Perform pagination setup
@@ -196,8 +212,6 @@ export default class SubscriberTableList extends LightningElement {
     * Description: This function handles the action triggered when the "Previous Page" button is clicked.
     */
     onPreviousPageClicked() {
-        // Reset search term to empty string.
-        this.searchTerm = '';
         // Decrement page number.
         this.pageNumber = this.pageNumber - 1;
         // Perform pagination setup.
@@ -245,7 +259,7 @@ export default class SubscriberTableList extends LightningElement {
     }
 
     get disableNextPageButtonGetter() {
-            return this.pageNumber == this.totalPages;
+        return this.pageNumber == this.totalPages;
     }
 
 }
